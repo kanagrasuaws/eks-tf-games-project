@@ -1,12 +1,14 @@
 pipeline {
-    agent any 
+    agent any
     tools {
-        jdk 'jdk'
+        jdk 'jdk17'
         nodejs 'nodejs'
     }
+    
     environment  {
         SCANNER_HOME=tool 'sonar-scanner'
     }
+
     stages {
         stage('Cleaning Workspace') {
             steps {
@@ -18,7 +20,8 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/kanagrasuaws/eks-tf-games-project.git'
             }
         }
-        stage('Sonarqube Analysis') {
+        
+    stage('Sonarqube Analysis') {
             steps {
                 dir('Tetris-V1') {
                     withSonarQubeEnv('sonar-scanner') {
@@ -27,22 +30,18 @@ pipeline {
                     }
                 }
             }
-        }
-        stage('Quality Check') {
+        } 
+        
+        
+    stage('Quality Check') {
             steps {
                 script {
                     waitForQualityGate abortPipeline: false, credentialsId: 'sonar-token' 
                 }
             }
         }
-        stage('Installing Dependencies') {
-            steps {
-                dir('Tetris-V1') {
-                    sh 'npm install'
-                }
-            }
-        }
-        stage('OWASP Dependency-Check Scan') {
+
+    stage('OWASP Dependency-Check Scan') {
             steps {
                 dir('Tetris-V1') {
                     dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
@@ -50,14 +49,26 @@ pipeline {
                 }
             }
         }
-        stage('Trivy File Scan') {
+        
+    stage('Installing Dependencies') {
+            steps {
+                dir('Tetris-V1') {
+                    sh 'npm install'
+                }
+            }
+        } 
+        
+        
+    stage('Trivy File Scan') {
             steps {
                 dir('Tetris-V1') {
                     sh 'trivy fs . > trivyfs.txt'
                 }
             }
-        }
-        stage("Docker Image Build") {
+        } 
+        
+        
+    stage("Docker Image Build") {
             steps {
                 script {
                     dir('Tetris-V1') {
@@ -69,8 +80,10 @@ pipeline {
                     }
                 }
             }
-        }
-        stage("Docker Image Pushing") {
+        } 
+        
+        
+    stage("Docker Image Pushing") {
             steps {
                 script {
                     withDockerRegistry(credentialsId: 'docker', toolName: 'docker') {   
@@ -79,15 +92,23 @@ pipeline {
                     }
                 }
             }
-        }
-        stage("TRIVY Image Scan") {
+        } 
+        
+    stage("TRIVY Image Scan") {
             steps {
                 sh 'trivy image kanagarasu/tetrisv1:${BUILD_NUMBER} > trivyimage.txt' 
             }
         }
-       
         
-            
+    stage('Trigger Downstream Pipeline') {
+            steps {
+                build job: 'eks-project'
+            }
         }
+    
+        
     }
 }
+
+        
+        
