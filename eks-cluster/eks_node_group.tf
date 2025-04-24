@@ -17,7 +17,7 @@ resource "aws_eks_node_group" "node-grp" {
   instance_types  = ["t2.small"]
 
   remote_access {
-    ec2_ssh_key               = "key1"
+    ec2_ssh_key               = "myproject"
     source_security_group_ids = [aws_security_group.allow_tls.id]
   }
 
